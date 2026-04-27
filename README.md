@@ -1,27 +1,15 @@
-<div align="center">
+# SpellForge 🔮
 
-# SpellForge
+> "맨손으로 마법을 시전한다" — MediaPipe와 OpenCV 기반 실시간 손 제스처 마법 시스템
 
-**맨손으로 마법을 시전한다**
+SpellForge는 웹캠을 마법 시전 인터페이스로 바꾸는 컴퓨터 비전 프로젝트입니다. 컨트롤러도, 버튼도 없이 오직 손만으로 — 방패를 펼치고, 에너지를 충전하고, 파이어볼을 발사하세요. 게임 모드에서는 날아오는 적과 탄환을 손 제스처로 격파합니다.
 
-MediaPipe와 OpenCV 기반 실시간 손 제스처 마법 시스템
-
-<br/>
+손 제스처 인식과 실시간 시각 이펙트를 탐구하기 위한 개인 프로젝트입니다.
 
 ![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)
 ![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5C3EE8?style=flat-square&logo=opencv&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10+-0097A7?style=flat-square)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-
-</div>
-
----
-
-## 소개
-
-컨트롤러도, 버튼도 없이 오직 손만으로 마법을 시전합니다.
-손바닥을 펼쳐 방패를 치고, 주먹을 쥐어 에너지를 충전하고, 검지로 겨냥해 파이어볼을 발사하세요.
-게임 모드에서는 날아오는 적과 탄환을 직접 막고 격파합니다.
 
 <br/>
 
