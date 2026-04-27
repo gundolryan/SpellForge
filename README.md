@@ -1,3 +1,4 @@
+
 # SpellForge 🔮
 
 > "맨손으로 마법을 시전한다" — MediaPipe와 OpenCV 기반 실시간 손 제스처 마법 시스템
@@ -9,8 +10,7 @@ SpellForge는 웹캠을 마법 시전 인터페이스로 바꾸는 컴퓨터 비
 ---
 
 ## 데모
-
-<!-- 여기에 GIF 또는 스크린샷 추가 -->
+<img width="1024" height="559" alt="KakaoTalk_Photo_2026-04-27-23-19-40" src="https://github.com/user-attachments/assets/7bde13b2-e69f-4d39-8859-a773cdddbcac" />
 
 ---
 
