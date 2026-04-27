@@ -10,7 +10,7 @@ SpellForge는 웹캠을 마법 시전 인터페이스로 바꾸는 컴퓨터 비
 ---
 
 ## 데모
-<img src="https://github.com/user-attachments/assets/7bde13b2-e69f-4d39-8859-a773cdddbcac" width="70%" />
+<img src="https://github.com/user-attachments/assets/7bde13b2-e69f-4d39-8859-a773cdddbcac" width="600" />
 ---
 
 ## 마법 목록
