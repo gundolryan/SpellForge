@@ -6,11 +6,6 @@ SpellForge는 웹캠을 마법 시전 인터페이스로 바꾸는 컴퓨터 비
 
 손 제스처 인식과 실시간 시각 이펙트를 탐구하기 위한 개인 프로젝트입니다.
 
-![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)
-![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5C3EE8?style=flat-square&logo=opencv&logoColor=white)
-![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10+-0097A7?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-
 <br/>
 
 <div align="center">
@@ -142,7 +137,10 @@ SpellForge/
 ---
 
 <div align="center">
-
+![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=flat-square&logo=python&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-4.x-5C3EE8?style=flat-square&logo=opencv&logoColor=white)
+![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10+-0097A7?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 MIT License &nbsp;·&nbsp; made by [gundolryan](https://github.com/gundolryan)
 
 </div>
