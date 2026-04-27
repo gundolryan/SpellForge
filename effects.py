@@ -45,6 +45,7 @@ class FireballEffect(Effect):
         self.glow_r = int(40 * mult)
         self.trail_max = 30 if charged else 22
         self.trail = []
+        self.spent = False   # True after hitting a target (regular only)
 
     def draw(self, frame):
         p = self.progress
@@ -84,7 +85,7 @@ class FireballEffect(Effect):
             cv2.circle(frame, (sx, sy), 3, (0, 200, 255), -1)
 
         if p < 0.25:
-            label = "★ MEGA FIREBALL!" if self.charged else "FIREBALL!"
+            label = "MEGA FIREBALL!" if self.charged else "FIREBALL!"
             cv2.putText(frame, label, (cx - 70, cy - self.glow_r - 15),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.85,
                         (0, 220, 255) if self.charged else (0, 160, 255), 2)

@@ -10,6 +10,8 @@ import urllib.request
 
 from gesture_detector import GestureDetector
 from effects import EffectManager
+from games.target import TargetGame
+from games.lobby import GameLobby
 
 MODEL_PATH = "hand_landmarker.task"
 MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
@@ -151,6 +153,7 @@ def draw_ui(frame):
         ("Palm open     ->  Shield",          (255, 160,  30)),
         ("Point finger  ->  Fireball",         (  0, 160, 255)),
         ("Fist -> Point ->  Mega Fireball",    ( 80, 255, 255)),
+        ("G  ->  Game mode",                   ( 80, 180,  80)),
         ("Q to quit",                          (100, 100, 100)),
     ]
     for i, (text, col) in enumerate(lines):
@@ -167,9 +170,14 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
+    cv2.namedWindow("Magic Gesture System", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("Magic Gesture System", 1280, 720)
+
     detectors: dict[str, GestureDetector] = {}
     effects = EffectManager()
     hand_labels: dict[str, dict] = {}
+    lobby = None   # GameLobby when in menu
+    game  = None   # TargetGame when playing
 
     options = mp_vision.HandLandmarkerOptions(
         base_options=mp_python.BaseOptions(model_asset_path=MODEL_PATH),
@@ -194,6 +202,12 @@ def main():
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
             result = landmarker.detect(mp_image)
 
+            # Collect hand state for lobby cursor and shield
+            any_pointing   = False
+            any_index_tip  = (w // 2, h // 2)
+            shield_center  = None
+            shield_radius  = 0
+
             active = set()
             if result.hand_landmarks:
                 for i, hand_lms in enumerate(result.hand_landmarks):
@@ -210,44 +224,50 @@ def main():
 
                     gesture = det.update(hand_lms, frame.shape)
 
-                    # ── Live visuals ──────────────────────────────────────────
-                    # Shield
+                    if det.is_pointing:
+                        any_pointing  = True
+                        any_index_tip = det.index_tip_px
+
                     if det.is_palm_open:
-                        draw_live_shield(frame, det.palm_center,
-                                         det.current_palm_size, t,
-                                         det.shield_activated_time)
-                    elif 0 < det.open_palm_counter < det.OPEN_PALM_HOLD:
-                        draw_shield_loading(frame, det.palm_center,
-                                            det.current_palm_size,
-                                            det.open_palm_counter / det.OPEN_PALM_HOLD)
+                        shield_center = det.palm_center
+                        shield_radius = max(80, int(det.current_palm_size * 1.6))
 
-                    # Charge
-                    if det.is_charged:
-                        draw_charge_aura(frame, wrist_px, t, det.is_fist)
-                    elif 0 < det.fist_counter < det.FIST_HOLD:
-                        draw_fist_loading(frame, det.palm_center,
-                                          det.current_palm_size,
-                                          det.fist_counter / det.FIST_HOLD)
+                    # ── Live visuals (only outside lobby) ─────────────────────
+                    if lobby is None:
+                        if det.is_palm_open:
+                            draw_live_shield(frame, det.palm_center,
+                                             det.current_palm_size, t,
+                                             det.shield_activated_time)
+                        elif 0 < det.open_palm_counter < det.OPEN_PALM_HOLD:
+                            draw_shield_loading(frame, det.palm_center,
+                                                det.current_palm_size,
+                                                det.open_palm_counter / det.OPEN_PALM_HOLD)
 
-                    # Fireball pointing
-                    if det.is_pointing and det.point_counter > 0:
-                        draw_point_loading(frame, det.index_tip_px,
-                                           det.point_direction,
-                                           det.point_counter / det.POINT_HOLD)
+                        if det.is_charged:
+                            draw_charge_aura(frame, wrist_px, t, det.is_fist)
+                        elif 0 < det.fist_counter < det.FIST_HOLD:
+                            draw_fist_loading(frame, det.palm_center,
+                                              det.current_palm_size,
+                                              det.fist_counter / det.FIST_HOLD)
+
+                        if det.is_pointing and det.point_counter > 0:
+                            draw_point_loading(frame, det.index_tip_px,
+                                               det.point_direction,
+                                               det.point_counter / det.POINT_HOLD)
 
                     # ── Gesture event ─────────────────────────────────────────
-                    if gesture:
+                    if gesture and lobby is None:
                         effects.add(gesture)
                         name    = gesture[0]
                         charged = gesture[-1] if name == "push" else False
                         base_label, color = GESTURE_LABELS[name]
-                        label = ("★ " + base_label) if charged else base_label
+                        label = ("[MEGA] " + base_label) if charged else base_label
                         hand_labels[side] = {
                             "label": label, "color": color,
                             "end": t + 1.0, "pos": wrist_px,
                         }
 
-                    if side in hand_labels and hand_labels[side]["end"] > t:
+                    if lobby is None and side in hand_labels and hand_labels[side]["end"] > t:
                         info = hand_labels[side]
                         draw_hand_label(frame, info["label"], info["color"],
                                         wrist_px, side)
@@ -257,11 +277,50 @@ def main():
                     del detectors[side]
 
             effects.draw(frame)
-            draw_ui(frame)
+
+            # ── State: lobby / game / normal ──────────────────────────────────
+            if lobby is not None:
+                chosen = lobby.update(any_index_tip, any_pointing)
+                lobby.draw(frame, any_index_tip, any_pointing)
+                if chosen == "target":
+                    game  = TargetGame(frame.shape)
+                    lobby = None
+                    effects.effects.clear()
+            elif game is not None:
+                try:
+                    game.update(effects.effects, shield_center, shield_radius)
+                    game.draw(frame)
+                except Exception:
+                    import traceback
+                    traceback.print_exc()
+                    game = None
+            else:
+                draw_ui(frame)
 
             cv2.imshow("Magic Gesture System", frame)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
+            key = cv2.waitKey(30) & 0xFF
+            if key != 0xFF:
+                print(f"key detected: {key} ({chr(key) if 32 <= key < 127 else '?'})")
+            if key in (ord("q"), 113):
                 break
+            elif key in (ord("g"), 78):  # 78 = G key in Korean IME mode
+                print("G pressed — toggling lobby")
+                if game is not None:
+                    game = None
+                    lobby = GameLobby(frame.shape)
+                    effects.effects.clear()
+                elif lobby is not None:
+                    lobby = None
+                else:
+                    try:
+                        lobby = GameLobby(frame.shape)
+                        print("Lobby created OK")
+                    except Exception:
+                        import traceback
+                        traceback.print_exc()
+            elif key == ord("r") and game is not None:
+                game = TargetGame(frame.shape)
+                effects.effects.clear()
 
     cap.release()
     cv2.destroyAllWindows()

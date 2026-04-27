@@ -104,36 +104,38 @@ class GestureDetector:
     # ── Fireball: index pointing with hold delay ───────────────────────────────
     def _update_point_state(self, landmarks, frame_shape):
         h, w = frame_shape[:2]
-        palm_ids = [0, 5, 9, 13, 17]
-        palm_pts = np.array([[landmarks[i].x * w, landmarks[i].y * h] for i in palm_ids])
-        palm_center = palm_pts.mean(axis=0)
 
-        wrist     = np.array([landmarks[0].x * w, landmarks[0].y * h])
-        mid_mcp   = np.array([landmarks[9].x * w, landmarks[9].y * h])
+        def pt(idx):
+            return np.array([landmarks[idx].x * w, landmarks[idx].y * h])
+
+        wrist     = pt(0)
+        mid_mcp   = pt(9)
         palm_size = np.linalg.norm(wrist - mid_mcp)
 
-        def dist(idx):
-            return np.linalg.norm(
-                np.array([landmarks[idx].x * w, landmarks[idx].y * h]) - palm_center
-            )
+        if palm_size == 0 or self.is_palm_open:
+            self.is_pointing   = False
+            self.point_counter = 0
+            return
 
-        index_dist  = dist(8)
-        middle_dist = dist(12)
-        ring_dist   = dist(16)
-        pinky_dist  = dist(20)
+        # Measure each finger by tip-to-MCP distance (robust across camera angles)
+        def ext(tip_idx, mcp_idx):
+            return np.linalg.norm(pt(tip_idx) - pt(mcp_idx)) / palm_size
+
+        idx_ext = ext(8,  5)   # index
+        mid_ext = ext(12, 9)   # middle
+        rng_ext = ext(16, 13)  # ring
+        pky_ext = ext(20, 17)  # pinky
 
         is_pointing_now = (
-            palm_size > 0 and
-            not self.is_palm_open and
-            index_dist  / palm_size > 1.3 and
-            middle_dist / palm_size < 1.0 and
-            ring_dist   / palm_size < 1.0 and
-            pinky_dist  / palm_size < 1.0
+            idx_ext > 0.9 and          # index clearly extended
+            idx_ext > mid_ext * 1.15 and  # index more extended than middle
+            mid_ext < 0.90 and
+            rng_ext < 0.95 and
+            pky_ext < 0.95
         )
 
         if is_pointing_now:
             self.point_counter = min(self.point_counter + 1, self.POINT_HOLD)
-            # Direction: index MCP (5) → index tip (8)
             ix = landmarks[8].x * w - landmarks[5].x * w
             iy = landmarks[8].y * h - landmarks[5].y * h
             length = math.sqrt(ix * ix + iy * iy)
